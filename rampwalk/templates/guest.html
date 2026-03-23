@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guest Scoring — Ramp Walk</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+:root {
+  --gold: #c9a84c; --gold-light: #f0d080; --deep: #07040e;
+  --panel: #110d1a; --border: rgba(201,168,76,0.25);
+  --cream: #f5efe0; --rose: #e8a0b4; --success: #4caf74;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--deep); color: var(--cream); font-family: 'Rajdhani', sans-serif; min-height: 100vh; }
+.header {
+  background: linear-gradient(135deg, #1a0d24, #0d0818);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.5rem; text-align: center;
+}
+.header h1 { font-family: 'Playfair Display', serif; color: var(--gold-light); font-size: 1.3rem; }
+.guest-name { color: var(--rose); font-size: 0.95rem; margin-top: 0.2rem; }
+.waiting {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 70vh; text-align: center; padding: 2rem; gap: 1rem;
+}
+.waiting .icon { font-size: 4rem; animation: bounce 2s infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-15px);} }
+.waiting h2 { font-family: 'Playfair Display', serif; color: var(--gold-light); font-size: 1.8rem; }
+.waiting p { color: #888; }
+.round-panel { padding: 1.5rem; max-width: 600px; margin: 0 auto; }
+.round-header {
+  text-align: center; margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(232,160,180,0.1));
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 1rem;
+}
+.round-header h2 { font-family: 'Playfair Display', serif; color: var(--gold-light); }
+.round-header p { color: var(--rose); font-size: 0.9rem; margin-top: 0.3rem; }
+.participant-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 1.2rem 1.5rem; margin-bottom: 1rem;
+  transition: border-color 0.3s;
+}
+.participant-card.scored { border-color: var(--success); }
+.p-info { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; }
+.p-num { 
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--deep); display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.9rem; flex-shrink: 0;
+}
+.p-name { font-size: 1.1rem; font-weight: 600; }
+.p-sub { color: #888; font-size: 0.85rem; }
+.score-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.score-btn {
+  width: 42px; height: 42px; border-radius: 8px; border: 2px solid var(--border);
+  background: rgba(255,255,255,0.04); color: var(--cream);
+  font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+}
+.score-btn:hover { border-color: var(--gold); background: rgba(201,168,76,0.15); }
+.score-btn.selected {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  border-color: var(--gold-light); color: var(--deep);
+  transform: scale(1.1);
+}
+.submit-btn {
+  width: 100%; padding: 0.7rem; border: none; border-radius: 8px; cursor: pointer;
+  font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 700;
+  letter-spacing: 0.05em; margin-top: 0.8rem;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--deep); transition: all 0.3s;
+}
+.submit-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 15px rgba(201,168,76,0.3); }
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.submitted-badge {
+  display: flex; align-items: center; gap: 0.5rem; justify-content: center;
+  color: var(--success); font-weight: 700; font-size: 0.95rem; margin-top: 0.8rem;
+}
+.progress {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(7,4,14,0.9); backdrop-filter: blur(10px);
+  padding: 0.6rem 1.5rem; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 1rem;
+}
+.progress-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 3px; transition: width 0.5s; }
+.progress-text { color: var(--gold); font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+.all-done {
+  text-align: center; padding: 3rem 2rem;
+  background: linear-gradient(135deg, rgba(76,175,116,0.1), rgba(201,168,76,0.1));
+  border: 1px solid rgba(76,175,116,0.3); border-radius: 16px; margin: 2rem 0;
+}
+.all-done h2 { font-family: 'Playfair Display', serif; color: var(--success); font-size: 1.8rem; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🎯 Guest Scoring Panel</h1>
+  <div class="guest-name" id="guestNameDisplay">Loading...</div>
+</div>
+
+<div id="mainContent">
+  <div class="waiting">
+    <div class="icon">⏳</div>
+    <h2>Waiting for Round...</h2>
+    <p>The scoring form will appear once the Admin starts the round.</p>
+  </div>
+</div>
+
+<script>
+const GUEST_ID = "{{ guest_id }}";
+const GUEST_NAME = "{{ guest_name }}";
+document.getElementById('guestNameDisplay').textContent = '🎭 ' + GUEST_NAME;
+
+const socket = io();
+let currentRound = null;
+let appState = null;
+const submitted = {};
+
+socket.on('state_update', (state) => {
+  appState = state;
+  if (state.current_round && state.current_round !== currentRound) {
+    currentRound = state.current_round;
+    renderRound(state);
+  }
+});
+
+socket.on('round_started', (data) => {
+  currentRound = data.round;
+  if (appState) renderRound(appState);
+  else fetch('/api/state').then(r=>r.json()).then(s=>{ appState=s; renderRound(s); });
+});
+
+fetch('/api/state').then(r=>r.json()).then(s => {
+  appState = s;
+  if (s.current_round) { currentRound = s.current_round; renderRound(s); }
+});
+
+function renderRound(state) {
+  const main = document.getElementById('mainContent');
+  if (currentRound === 'round1') {
+    const all = [...state.participants.boys, ...state.participants.girls];
+    renderScoringList(main, 'Round 1 — Introduction', 'Rate all participants on a scale of 1-10', all, 'round1', p => p.name, p => p.id);
+  } else if (currentRound === 'round2') {
+    renderScoringList(main, 'Round 2 — Couple Theme Walk', 'Rate each couple on a scale of 1-10', state.couples, 'round2',
+      c => `${c.boy_name} & ${c.girl_name}`, c => c.id, c => `Theme: ${c.theme}`);
+  }
+}
+
+function renderScoringList(container, title, subtitle, items, round, getName, getId, getSub) {
+  const scored = items.filter(i => submitted[getId(i)]).length;
+  container.innerHTML = `
+    <div class="progress">
+      <span class="progress-text">${scored}/${items.length} Scored</span>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:${(scored/items.length*100)}%"></div></div>
+    </div>
+    <div class="round-panel">
+      <div class="round-header"><h2>${title}</h2><p>${subtitle}</p></div>
+      ${items.map(item => renderCard(item, round, getName, getId, getSub)).join('')}
+    </div>`;
+}
+
+function renderCard(item, round, getName, getId, getSub) {
+  const id = getId(item);
+  const name = getName(item);
+  const sub = getSub ? getSub(item) : '';
+  const isSubmitted = submitted[id];
+  const selectedScore = submitted[id] || null;
+  return `
+    <div class="participant-card ${isSubmitted ? 'scored' : ''}" id="card-${id}">
+      <div class="p-info">
+        <div class="p-num">${item.number || (item.id ? item.id.replace(/\D/g,'') : '?')}</div>
+        <div><div class="p-name">${name}</div>${sub ? `<div class="p-sub">${sub}</div>` : ''}</div>
+      </div>
+      <div class="score-row" id="scores-${id}">
+        ${[1,2,3,4,5,6,7,8,9,10].map(n => 
+          `<button class="score-btn ${selectedScore==n?'selected':''}" onclick="selectScore('${id}','${round}',${n},this)">${n}</button>`
+        ).join('')}
+      </div>
+      ${isSubmitted
+        ? `<div class="submitted-badge">✅ Score ${isSubmitted} Submitted!</div>`
+        : `<button class="submit-btn" id="submit-${id}" disabled onclick="submitScore('${id}','${round}')">Submit Score</button>`
+      }
+    </div>`;
+}
+
+function selectScore(id, round, score, btn) {
+  if (submitted[id]) return;
+  document.querySelectorAll(`#scores-${id} .score-btn`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  btn.dataset.selectedScore = score;
+  const sbtn = document.getElementById(`submit-${id}`);
+  if (sbtn) { sbtn.disabled = false; sbtn.dataset.score = score; }
+}
+
+async function submitScore(id, round) {
+  const sbtn = document.getElementById(`submit-${id}`);
+  const score = sbtn?.dataset.score;
+  if (!score) return;
+  sbtn.disabled = true; sbtn.textContent = 'Submitting...';
+  const res = await fetch('/api/submit_score', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({guest_id: GUEST_ID, target_id: id, score, round})
+  });
+  const data = await res.json();
+  if (data.success) {
+    submitted[id] = score;
+    const card = document.getElementById(`card-${id}`);
+    card.classList.add('scored');
+    sbtn.outerHTML = `<div class="submitted-badge">✅ Score ${score} Submitted!</div>`;
+    updateProgress();
+  }
+}
+
+function updateProgress() {
+  if (!appState) return;
+  const items = currentRound === 'round1'
+    ? [...appState.participants.boys, ...appState.participants.girls]
+    : appState.couples;
+  const total = items.length;
+  const done = Object.keys(submitted).length;
+  document.querySelector('.progress-text').textContent = `${done}/${total} Scored`;
+  const fill = document.getElementById('progressFill');
+  if (fill) fill.style.width = (done/total*100) + '%';
+}
+</script>
+</body>
+</html>

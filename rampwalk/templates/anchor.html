@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anchor Dashboard — Ramp Walk</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+:root {
+  --gold: #c9a84c; --gold-light: #f0d080; --deep: #050308;
+  --panel: #0e0b17; --border: rgba(201,168,76,0.2);
+  --cream: #f5efe0; --rose: #e8a0b4;
+  --rank1: #ffd700; --rank2: #c0c0c0; --rank3: #cd7f32;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--deep); color: var(--cream); font-family: 'Rajdhani', sans-serif; min-height: 100vh; overflow-x: hidden; }
+.header {
+  background: linear-gradient(90deg, #1a0d24 0%, #0a0615 50%, #1a1024 100%);
+  border-bottom: 2px solid var(--gold);
+  padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+}
+.header-left { display: flex; align-items: center; gap: 1rem; }
+.header a { color: var(--gold); text-decoration: none; }
+.header h1 { font-family: 'Playfair Display', serif; color: var(--gold-light); font-size: 1.4rem; }
+.live-badge {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: rgba(255,50,50,0.2); border: 1px solid #ff3232;
+  border-radius: 20px; padding: 0.3rem 0.8rem;
+  font-size: 0.8rem; font-weight: 700; color: #ff6666; letter-spacing: 0.1em;
+}
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff3232; animation: livepulse 1s infinite; }
+@keyframes livepulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.8);} }
+.round-status {
+  text-align: center; padding: 0.6rem 2rem;
+  font-size: 0.9rem; letter-spacing: 0.15em; text-transform: uppercase;
+  transition: all 0.5s;
+}
+.round-status.r1 { background: linear-gradient(90deg, transparent, rgba(201,168,76,0.2), transparent); color: var(--gold-light); }
+.round-status.r2 { background: linear-gradient(90deg, transparent, rgba(232,160,180,0.2), transparent); color: var(--rose); }
+.container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media(max-width:768px) { .grid { grid-template-columns: 1fr; } }
+.panel {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 16px; padding: 1.5rem; overflow: hidden;
+}
+.panel-title {
+  font-family: 'Playfair Display', serif; color: var(--gold-light);
+  font-size: 1.1rem; margin-bottom: 1.2rem;
+  display: flex; align-items: center; gap: 0.5rem;
+  padding-bottom: 0.8rem; border-bottom: 1px solid var(--border);
+}
+/* Score rows */
+.score-row {
+  display: flex; align-items: center; gap: 0.8rem;
+  padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: all 0.4s;
+}
+.score-row:last-child { border-bottom: none; }
+.score-row.highlight { animation: rowflash 0.6s ease; }
+@keyframes rowflash { 0%,100%{background:transparent;} 50%{background:rgba(201,168,76,0.15);} }
+.s-num { min-width: 28px; text-align: center; font-weight: 700; color: var(--gold); font-size: 0.9rem; }
+.s-name { flex: 1; font-size: 0.95rem; }
+.s-bar-wrap { width: 100px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+.s-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); transition: width 0.5s cubic-bezier(.23,1,.32,1); }
+.s-total { min-width: 36px; text-align: right; font-weight: 700; font-size: 1rem; color: var(--gold-light); }
+.s-guests { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.g-chip { font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; background: rgba(255,255,255,0.08); color: #aaa; }
+.g-chip.new { background: rgba(201,168,76,0.3); color: var(--gold-light); animation: chipPop 0.4s ease; }
+@keyframes chipPop { 0%{transform:scale(0);} 60%{transform:scale(1.2);} 100%{transform:scale(1);} }
+/* Guest status */
+.guest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.6rem; }
+.guest-card {
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 8px; padding: 0.6rem 0.8rem; font-size: 0.85rem;
+}
+.guest-card-name { font-weight: 600; color: var(--cream); }
+.guest-card-count { color: #888; font-size: 0.75rem; margin-top: 0.2rem; }
+/* Winners */
+.winners-overlay {
+  display: none; position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.92); backdrop-filter: blur(10px);
+  align-items: center; justify-content: center; flex-direction: column;
+  text-align: center;
+}
+.winners-overlay.show { display: flex; }
+.confetti-area { position: fixed; inset: 0; pointer-events: none; z-index: 99; }
+.confetti-piece {
+  position: absolute; top: -20px;
+  width: 8px; height: 8px; border-radius: 2px;
+  animation: confettiFall linear infinite;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+.winner-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 6vw, 4rem); font-weight: 900;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light), var(--rose));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin: 1rem 0;
+}
+.winner-cards { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; margin: 1rem 0; }
+.winner-card {
+  border-radius: 20px; padding: 2rem 2.5rem; min-width: 200px;
+  border: 2px solid; animation: winnerPop 0.6s ease backwards;
+  position: relative; overflow: hidden;
+}
+.winner-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.1), transparent 70%);
+}
+.winner-card.rank1 { background: linear-gradient(135deg, #2a200a, #1a1500); border-color: var(--rank1); animation-delay: 0.2s; }
+.winner-card.rank2 { background: linear-gradient(135deg, #1a1a1a, #111); border-color: var(--rank2); animation-delay: 0.4s; }
+.winner-card.rank3 { background: linear-gradient(135deg, #1c1208, #120e05); border-color: var(--rank3); animation-delay: 0.6s; }
+@keyframes winnerPop { 0%{transform:scale(0) rotate(-10deg);opacity:0;} 80%{transform:scale(1.05) rotate(2deg);} 100%{transform:scale(1) rotate(0deg);opacity:1;} }
+.winner-rank { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.winner-names { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin: 0.5rem 0; }
+.winner-theme { font-size: 0.9rem; opacity: 0.7; font-style: italic; }
+.winner-score { font-size: 1.8rem; font-weight: 700; margin-top: 0.8rem; }
+.winner-card.rank1 .winner-score { color: var(--rank1); }
+.winner-card.rank2 .winner-score { color: var(--rank2); }
+.winner-card.rank3 .winner-score { color: var(--rank3); }
+.close-winners { margin-top: 2rem; padding: 0.8rem 2rem; background: var(--gold); color: var(--deep); border: none; border-radius: 10px; font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; }
+.empty-msg { color: #555; font-style: italic; text-align: center; padding: 2rem; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <a href="/">← Home</a>
+    <h1>🎤 Anchor Dashboard</h1>
+  </div>
+  <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+</div>
+
+<div class="round-status" id="roundStatus">⏸ No Active Round</div>
+
+<div class="container">
+  <div class="grid">
+    <!-- Round 1 Scores -->
+    <div class="panel">
+      <div class="panel-title">🎤 Round 1 — Introduction Scores</div>
+      <div id="round1List"><div class="empty-msg">Scores will appear here once Round 1 starts...</div></div>
+    </div>
+    <!-- Round 2 Scores -->
+    <div class="panel">
+      <div class="panel-title">💑 Round 2 — Couple Theme Scores</div>
+      <div id="round2List"><div class="empty-msg">Scores will appear here once Round 2 starts...</div></div>
+    </div>
+  </div>
+
+  <!-- Guest Activity -->
+  <div class="panel" style="margin-top:1.5rem;">
+    <div class="panel-title">👥 Guest Scoring Activity</div>
+    <div class="guest-grid" id="guestGrid"><div class="empty-msg">No guests connected...</div></div>
+  </div>
+</div>
+
+<!-- Winners Overlay -->
+<div class="winners-overlay" id="winnersOverlay">
+  <div class="confetti-area" id="confettiArea"></div>
+  <div style="font-size:3rem;">🎊</div>
+  <div class="winner-title">🏆 Winners 🏆</div>
+  <div class="winner-cards" id="winnerCards"></div>
+  <button class="close-winners" onclick="closeWinners()">Back to Dashboard</button>
+</div>
+
+<script>
+const socket = io();
+socket.emit('join_anchor');
+
+let appState = null;
+let round1Scores = {}; // {id: {guest: score}}
+let round2Scores = {};
+let guestActivity = {}; // {guest_id: count}
+
+socket.on('state_update', (state) => {
+  appState = state;
+  renderGuestGrid(state.guests);
+  if (state.current_round) updateRoundStatus(state.current_round);
+  if (state.winners && state.winners.length > 0) showWinners(state.winners);
+});
+
+socket.on('round_started', (data) => {
+  updateRoundStatus(data.round);
+});
+
+socket.on('score_update', (data) => {
+  const { round, target_id, guest_id, guest_name, score, scores } = data;
+  if (round === 'round1') {
+    round1Scores = scores;
+    renderScoreList('round1List', scores, round1Scores, 'round1');
+  } else {
+    round2Scores = scores;
+    renderScoreList('round2List', scores, round2Scores, 'round2');
+  }
+  // Update guest activity
+  if (!guestActivity[guest_id]) guestActivity[guest_id] = 0;
+  guestActivity[guest_id]++;
+  updateGuestCard(guest_id, guest_name);
+  // Flash row
+  setTimeout(() => {
+    const row = document.getElementById(`row-${target_id}`);
+    if (row) row.classList.add('highlight');
+    setTimeout(() => row?.classList.remove('highlight'), 700);
+  }, 100);
+});
+
+socket.on('winners_announced', (data) => {
+  showWinners(data.winners);
+});
+
+// Fetch initial scores
+async function loadScores() {
+  const res = await fetch('/api/scores');
+  const data = await res.json();
+  if (data.round1 && Object.keys(data.round1).length) {
+    round1Scores = buildScoresFromTotals(data.round1);
+    renderScoreList('round1List', round1Scores, round1Scores, 'round1');
+  }
+  if (data.round2 && Object.keys(data.round2).length) {
+    // round2 has {total, scores} per couple
+    const r2 = {};
+    Object.entries(data.round2).forEach(([id, v]) => r2[id] = v.scores || {});
+    round2Scores = r2;
+    renderScoreList('round2List', round2Scores, round2Scores, 'round2');
+  }
+}
+
+function buildScoresFromTotals(totals) {
+  const out = {};
+  Object.keys(totals).forEach(id => out[id] = {});
+  return out;
+}
+
+fetch('/api/state').then(r=>r.json()).then(s => {
+  appState = s;
+  renderGuestGrid(s.guests);
+  if (s.current_round) updateRoundStatus(s.current_round);
+  if (s.winners?.length) showWinners(s.winners);
+  loadScores();
+});
+
+function updateRoundStatus(round) {
+  const el = document.getElementById('roundStatus');
+  el.className = 'round-status ' + round;
+  el.textContent = round === 'round1' ? '🎤 Round 1 Active — Introduction' : '💑 Round 2 Active — Couple Theme Walk';
+}
+
+function getTotal(scores) {
+  return Object.values(scores).reduce((a,b) => a+b, 0);
+}
+
+function renderScoreList(containerId, scores, allScores, round) {
+  if (!appState) return;
+  const container = document.getElementById(containerId);
+  const items = round === 'round1'
+    ? [...appState.participants.boys, ...appState.participants.girls]
+    : appState.couples;
+
+  const sorted = items.map(item => {
+    const id = item.id;
+    const s = scores[id] || {};
+    return { item, id, total: getTotal(s), gscores: s };
+  }).sort((a,b) => b.total - a.total);
+
+  const maxScore = sorted[0]?.total || 1;
+
+  container.innerHTML = sorted.map(({ item, id, total, gscores }) => {
+    const name = round === 'round1' ? item.name : `${item.boy_name || '?'} & ${item.girl_name || '?'}`;
+    const sub = round === 'round2' ? item.theme : '';
+    const gChips = Object.entries(gscores).map(([gid, sc]) =>
+      `<span class="g-chip">${appState.guests[gid]||gid}: ${sc}</span>`
+    ).join('');
+    return `
+      <div class="score-row" id="row-${id}">
+        <div class="s-num">#${sorted.findIndex(x=>x.id===id)+1}</div>
+        <div style="flex:1">
+          <div class="s-name">${name}</div>
+          ${sub ? `<div style="font-size:0.75rem;color:#888;">${sub}</div>` : ''}
+          <div class="s-guests" style="margin-top:0.3rem;">${gChips}</div>
+        </div>
+        <div class="s-bar-wrap"><div class="s-bar" style="width:${maxScore?Math.round(total/maxScore*100):0}%"></div></div>
+        <div class="s-total">${total}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderGuestGrid(guests) {
+  const grid = document.getElementById('guestGrid');
+  if (!guests || !Object.keys(guests).length) {
+    grid.innerHTML = '<div class="empty-msg">No guests connected...</div>';
+    return;
+  }
+  grid.innerHTML = Object.entries(guests).map(([id, name]) => `
+    <div class="guest-card" id="gcard-${id}">
+      <div class="guest-card-name">🎭 ${name}</div>
+      <div class="guest-card-count" id="gcnt-${id}">${guestActivity[id] || 0} scores given</div>
+    </div>`).join('');
+}
+
+function updateGuestCard(gid, name) {
+  const cnt = document.getElementById(`gcnt-${gid}`);
+  if (cnt) cnt.textContent = `${guestActivity[gid]} scores given`;
+  const card = document.getElementById(`gcard-${gid}`);
+  if (card) {
+    card.style.borderColor = 'var(--gold)';
+    card.style.background = 'rgba(201,168,76,0.12)';
+    setTimeout(() => { card.style.borderColor = ''; card.style.background = ''; }, 1500);
+  }
+}
+
+function showWinners(winners) {
+  const overlay = document.getElementById('winnersOverlay');
+  const cards = document.getElementById('winnerCards');
+  const confetti = document.getElementById('confettiArea');
+
+  const rankEmoji = ['🥇', '🥈', '🥉'];
+  const rankClass = ['rank1', 'rank2', 'rank3'];
+
+  cards.innerHTML = winners.map((w, i) => `
+    <div class="winner-card ${rankClass[i]}">
+      <div class="winner-rank">${rankEmoji[i]}</div>
+      <div class="winner-names">${w.boy_name} & ${w.girl_name}</div>
+      <div class="winner-theme">${w.theme}</div>
+      <div class="winner-score">${w.total_score} pts</div>
+    </div>`).join('');
+
+  // Confetti
+  confetti.innerHTML = '';
+  const colors = ['#c9a84c','#f0d080','#e8a0b4','#fff','#ffd700','#ff69b4'];
+  for (let i=0;i<80;i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random()*100+'%';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration = (Math.random()*3+2)+'s';
+    p.style.animationDelay = (Math.random()*3)+'s';
+    p.style.width = p.style.height = (Math.random()*10+4)+'px';
+    p.style.borderRadius = Math.random()>0.5 ? '50%' : '2px';
+    confetti.appendChild(p);
+  }
+  overlay.classList.add('show');
+}
+
+function closeWinners() {
+  document.getElementById('winnersOverlay').classList.remove('show');
+}
+</script>
+</body>
+</html>

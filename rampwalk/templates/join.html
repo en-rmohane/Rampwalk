@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join — Ramp Walk Scoring</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #c9a84c; --gold-light: #f0d080;
+  --deep: #07040e; --panel: #110d1a;
+  --border: rgba(201,168,76,0.3);
+  --cream: #f5efe0; --rose: #e8a0b4;
+  --success: #4caf74; --error: #e05050;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--deep); color: var(--cream);
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem;
+}
+/* animated bg */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse at 30% 40%, #3d0c1f33 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 70%, #c9a84c18 0%, transparent 50%);
+  animation: bgp 6s ease-in-out infinite alternate;
+}
+@keyframes bgp { 0%{opacity:.7} 100%{opacity:1;transform:scale(1.04)} }
+
+.card {
+  position: relative; z-index: 1;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 24px; padding: 2.5rem 2rem;
+  max-width: 420px; width: 100%;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  text-align: center;
+}
+.emoji { font-size: 3.5rem; margin-bottom: 0.5rem; display: block; animation: bounce 2.5s ease-in-out infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+h1 {
+  font-family: 'Playfair Display', serif; font-size: 2rem;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light), var(--rose));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin-bottom: 0.4rem;
+}
+.subtitle { color: #888; font-size: 0.95rem; margin-bottom: 2rem; }
+.divider { width: 100px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 0 auto 2rem; }
+
+label { display: block; text-align: left; font-size: 0.8rem; color: var(--gold); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.5rem; }
+
+.input-wrap { position: relative; margin-bottom: 1.5rem; }
+input[type=text] {
+  width: 100%; padding: 1rem 1.2rem;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid var(--border); border-radius: 12px;
+  color: var(--cream); font-family: 'Rajdhani', sans-serif;
+  font-size: 1.15rem; font-weight: 600;
+  transition: border 0.25s, box-shadow 0.25s;
+  outline: none;
+}
+input[type=text]:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(201,168,76,0.12); }
+input[type=text]::placeholder { color: #554433; font-weight: 400; }
+
+.btn {
+  width: 100%; padding: 1rem; border: none; border-radius: 12px; cursor: pointer;
+  font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: #0a0608;
+  transition: all 0.3s cubic-bezier(.23,1,.32,1);
+  position: relative; overflow: hidden;
+}
+.btn:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(201,168,76,0.35); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn .spinner {
+  display: none; width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.2);
+  border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn.loading .btn-text { display: none; }
+.btn.loading .spinner { display: block; }
+
+.msg { margin-top: 1rem; padding: 0.8rem 1rem; border-radius: 10px; font-size: 0.95rem; font-weight: 600; }
+.msg.error { background: rgba(224,80,80,0.15); border: 1px solid var(--error); color: var(--error); }
+.msg.info { background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.3); color: var(--gold-light); }
+
+/* Wait state */
+.wait-screen { display: none; flex-direction: column; align-items: center; gap: 1rem; }
+.wait-screen.show { display: flex; }
+.wait-icon { font-size: 3rem; animation: rotateslide 3s ease-in-out infinite; }
+@keyframes rotateslide { 0%,100%{transform:rotate(-10deg)} 50%{transform:rotate(10deg)} }
+.wait-name { font-family: 'Playfair Display', serif; color: var(--gold-light); font-size: 1.4rem; }
+.pulse-ring {
+  width: 60px; height: 60px; border-radius: 50%;
+  border: 3px solid var(--gold);
+  animation: pulseRing 1.5s ease-out infinite;
+  margin: 0.5rem 0;
+}
+@keyframes pulseRing { 0%{transform:scale(0.8);opacity:1} 100%{transform:scale(1.6);opacity:0} }
+</style>
+</head>
+<body>
+<div class="card" id="joinCard">
+  <!-- Join Form -->
+  <div id="formSection">
+    <span class="emoji">🎯</span>
+    <h1>Become a Judge!</h1>
+    <p class="subtitle">Annual Function Ramp Walk</p>
+    <div class="divider"></div>
+
+    <label>Enter Your Name</label>
+    <div class="input-wrap">
+      <input type="text" id="nameInput" placeholder="Ex: Ramesh Ji, Sunita Ma'am..." maxlength="40" autofocus
+        onkeydown="if(event.key==='Enter')joinNow()">
+    </div>
+
+    <button class="btn" id="joinBtn" onclick="joinNow()">
+      <span class="btn-text">✨ Start Scoring</span>
+      <div class="spinner"></div>
+    </button>
+
+    <div id="msgBox" style="display:none" class="msg"></div>
+  </div>
+
+  <!-- Waiting for round -->
+  <div class="wait-screen" id="waitSection">
+    <span class="wait-icon">⏳</span>
+    <div class="pulse-ring"></div>
+    <div class="wait-name" id="waitName"></div>
+    <p style="color:#888;font-size:0.9rem;">You have joined!</p>
+    <p style="color:#aaa;font-size:0.85rem;text-align:center;">
+      The scoring form will automatically appear here when the round starts.<br>
+      Do not close this page! 📱
+    </p>
+    <div class="msg info">Waiting for the Admin to start the round...</div>
+  </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+const socket = io();
+let myGuestId = null;
+let myName = null;
+
+// Agar already registered hai (localStorage se)
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('rampwalk_guest');
+  if (saved) {
+    try {
+      const { id, name } = JSON.parse(saved);
+      // Verify with server
+      fetch('/api/state').then(r=>r.json()).then(s => {
+        if (s.guests && s.guests[id]) {
+          myGuestId = id; myName = name;
+          if (s.current_round) {
+            window.location.href = '/guest/' + id;
+          } else {
+            showWaiting(name);
+          }
+        } else {
+          localStorage.removeItem('rampwalk_guest');
+        }
+      });
+    } catch(e) { localStorage.removeItem('rampwalk_guest'); }
+  }
+});
+
+async function joinNow() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) { showMsg('Please enter your name first!', 'error'); return; }
+
+  const btn = document.getElementById('joinBtn');
+  btn.classList.add('loading'); btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/guest_register', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({name})
+    });
+    const data = await res.json();
+    if (data.success) {
+      myGuestId = data.guest_id; myName = data.guest_name;
+      localStorage.setItem('rampwalk_guest', JSON.stringify({id: myGuestId, name: myName}));
+      // Check if round is already active
+      const stateRes = await fetch('/api/state');
+      const state = await stateRes.json();
+      if (state.current_round) {
+        window.location.href = '/guest/' + myGuestId;
+      } else {
+        showWaiting(myName);
+      }
+    } else {
+      showMsg(data.error || 'Something went wrong, please try again.', 'error');
+      btn.classList.remove('loading'); btn.disabled = false;
+    }
+  } catch(e) {
+    showMsg('Unable to connect to the server. Please try again.', 'error');
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+}
+
+function showWaiting(name) {
+  document.getElementById('formSection').style.display = 'none';
+  document.getElementById('waitName').textContent = '🎭 ' + name;
+  document.getElementById('waitSection').classList.add('show');
+}
+
+function showMsg(text, type) {
+  const box = document.getElementById('msgBox');
+  box.textContent = text; box.className = 'msg ' + type;
+  box.style.display = 'block';
+}
+
+socket.on('round_started', (data) => {
+  if (myGuestId) window.location.href = '/guest/' + myGuestId;
+});
+
+socket.on('state_update', (state) => {
+  if (myGuestId && state.current_round) {
+    window.location.href = '/guest/' + myGuestId;
+  }
+});
+</script>
+</body>
+</html>
