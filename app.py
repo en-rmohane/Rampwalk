@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import json
 import os
@@ -8,6 +8,8 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'rampwalk-annual-function-2024')
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 
 # In-memory state (resets on server restart)
 state = {
@@ -35,7 +37,24 @@ def index():
 
 @app.route('/admin')
 def admin():
+    if not session.get('admin'):
+        return redirect(url_for('login'))
     return render_template('admin.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == ADMIN_PASSWORD:
+            session['admin'] = True
+            return redirect(url_for('admin'))
+        return render_template('login.html', error="Invalid password")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('admin', None)
+    return redirect(url_for('login'))
 
 @app.route('/join')
 def join_page():
@@ -55,6 +74,8 @@ def anchor():
 
 @app.route('/api/setup', methods=['POST'])
 def setup():
+    if not session.get('admin'):
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.json
     # Setup guests
     state["guests"] = {}
@@ -105,6 +126,8 @@ def guest_register():
 
 @app.route('/api/start_round', methods=['POST'])
 def start_round():
+    if not session.get('admin'):
+        return jsonify({"error": "Unauthorized"}), 401
     data = request.json
     round_name = data.get("round")
     if round_name in ["round1", "round2"]:
@@ -145,6 +168,8 @@ def submit_score():
 
 @app.route('/api/finalize_round2', methods=['POST'])
 def finalize_round2():
+    if not session.get('admin'):
+        return jsonify({"error": "Unauthorized"}), 401
     results = compute_results()
     state["winners"] = results
     socketio.emit('winners_announced', {"winners": results})

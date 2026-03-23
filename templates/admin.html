@@ -111,8 +111,11 @@ input[type=text]:focus { outline: none; border-color: var(--gold); }
 <div class="header">
   <a href="/">← Home</a>
   <h1>⚙️ Admin Setup Panel</h1>
-  <div style="margin-left:auto;" id="currentRoundBadge">
-    <span class="status-badge inactive"><span class="dot"></span> No Round Active</span>
+  <div style="margin-left:auto; display:flex; align-items:center; gap:1.5rem;">
+    <div id="currentRoundBadge">
+      <span class="status-badge inactive"><span class="dot"></span> No Round Active</span>
+    </div>
+    <a href="/logout" class="btn btn-outline btn-sm" style="text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem;">🚪 Logout</a>
   </div>
 </div>
 
