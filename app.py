@@ -179,12 +179,12 @@ def start_round():
         return jsonify({"error": "Unauthorized"}), 401
     data = request.json
     round_name = data.get("round")
-    if round_name in ["round1", "round2"]:
-        state["current_round"] = round_name
+    if round_name in ["round1", "round2", None, ""]:
+        state["current_round"] = round_name if round_name else None
         save_state()
-        socketio.emit('round_started', {"round": round_name})
+        socketio.emit('round_started', {"round": state["current_round"]})
         socketio.emit('state_update', get_public_state())
-        return jsonify({"success": True, "round": round_name})
+        return jsonify({"success": True, "round": state["current_round"]})
     return jsonify({"error": "Invalid round"}), 400
 
 @app.route('/api/submit_score', methods=['POST'])

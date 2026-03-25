@@ -196,6 +196,7 @@ input[type=text]:focus { outline: none; border-color: var(--gold); }
     <div class="round-controls">
       <button class="btn btn-outline" onclick="startRound('round1')">▶ Round 1 Start (Introduction)</button>
       <button class="btn btn-outline" onclick="startRound('round2')">▶ Round 2 Start (Couple Theme)</button>
+      <button class="btn btn-red" onclick="startRound(null)">⏹ End Current Round</button>
       <button class="btn btn-red" onclick="finalizeWinners()">🏆 Announce Final Results</button>
     </div>
   </div>
@@ -274,6 +275,9 @@ async function loadInitialState() {
   if (s.current_round) {
     document.getElementById('currentRoundBadge').innerHTML =
       `<span class="status-badge active"><span class="dot pulse"></span> ${s.current_round === 'round1' ? 'Round 1 Active' : 'Round 2 Active'}</span>`;
+  } else {
+    document.getElementById('currentRoundBadge').innerHTML =
+      `<span class="status-badge inactive"><span class="dot"></span> No Round Active</span>`;
   }
   
   renderSetup();
@@ -384,7 +388,7 @@ function addPerson(type) {
     boys.push({ id: 'b'+Date.now(), name: '', number: nextNum });
   }
   if(type === 'girls') {
-    let nextNum = girls.length > 0 ? Math.max(...g=>g.number) + 1 : 1;
+    let nextNum = girls.length > 0 ? Math.max(...girls.map(g=>g.number)) + 1 : 1;
     girls.push({ id: 'g'+Date.now(), name: '', number: nextNum });
   }
   renderSetup();
@@ -469,9 +473,15 @@ async function startRound(round) {
   });
   const data = await res.json();
   if(data.success) {
-    showToast(`${round === 'round1' ? 'Round 1' : 'Round 2'} has started! 🎬`, 'success');
-    document.getElementById('currentRoundBadge').innerHTML =
-      `<span class="status-badge active"><span class="dot pulse"></span> ${round === 'round1' ? 'Round 1 Active' : 'Round 2 Active'}</span>`;
+    if (round) {
+      showToast(`${round === 'round1' ? 'Round 1' : 'Round 2'} has started! 🎬`, 'success');
+      document.getElementById('currentRoundBadge').innerHTML =
+        `<span class="status-badge active"><span class="dot pulse"></span> ${round === 'round1' ? 'Round 1 Active' : 'Round 2 Active'}</span>`;
+    } else {
+      showToast(`Current round has been ended. ⏹`, 'success');
+      document.getElementById('currentRoundBadge').innerHTML =
+        `<span class="status-badge inactive"><span class="dot"></span> No Round Active</span>`;
+    }
   }
 }
 

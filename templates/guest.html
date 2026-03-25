@@ -127,7 +127,7 @@ const submitted = {};
 
 socket.on('state_update', (state) => {
   appState = state;
-  if (state.current_round && state.current_round !== currentRound) {
+  if (state.current_round !== currentRound) {
     currentRound = state.current_round;
     renderRound(state);
   }
@@ -141,7 +141,8 @@ socket.on('round_started', (data) => {
 
 fetch('/api/state').then(r=>r.json()).then(s => {
   appState = s;
-  if (s.current_round) { currentRound = s.current_round; renderRound(s); }
+  currentRound = s.current_round;
+  renderRound(s);
 });
 
 function renderRound(state) {
@@ -161,6 +162,14 @@ function renderRound(state) {
     });
     renderScoringList(main, 'Round 2 — Couple Theme Walk', 'Rate each candidate on Look, Walk, Dress, and Q&A (Max 10 each)', r2Items, 'round2',
       p => p.name, p => p.id, p => `Theme: ${p.theme}`);
+  } else {
+    // No round active
+    main.innerHTML = `
+      <div class="waiting">
+        <div class="icon">⏳</div>
+        <h2>Waiting for Round...</h2>
+        <p>The scoring form will appear once the Admin starts the round.</p>
+      </div>`;
   }
 }
 
