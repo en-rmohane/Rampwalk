@@ -1,6 +1,205 @@
 {
     "current_round": "round2",
-    "round1_scores": {},
+    "round1_scores": {
+        "g5": {
+            "g_62b93bcc": {
+                "total": 36,
+                "breakdown": {
+                    "look": 9,
+                    "walk": 10,
+                    "dress": 9,
+                    "extra": 8
+                }
+            }
+        },
+        "g6": {
+            "g_62b93bcc": {
+                "total": 37,
+                "breakdown": {
+                    "look": 9,
+                    "walk": 10,
+                    "dress": 9,
+                    "extra": 9
+                }
+            }
+        },
+        "b3": {
+            "g_62b93bcc": {
+                "total": 38,
+                "breakdown": {
+                    "look": 9,
+                    "walk": 10,
+                    "dress": 10,
+                    "extra": 9
+                }
+            }
+        },
+        "b4": {
+            "g_62b93bcc": {
+                "total": 39,
+                "breakdown": {
+                    "look": 9,
+                    "walk": 10,
+                    "dress": 10,
+                    "extra": 10
+                }
+            }
+        },
+        "b5": {
+            "g_62b93bcc": {
+                "total": 38,
+                "breakdown": {
+                    "look": 10,
+                    "walk": 9,
+                    "dress": 10,
+                    "extra": 9
+                }
+            }
+        },
+        "b6": {
+            "g_62b93bcc": {
+                "total": 34,
+                "breakdown": {
+                    "look": 10,
+                    "walk": 10,
+                    "dress": 7,
+                    "extra": 7
+                }
+            }
+        },
+        "b7": {
+            "g_62b93bcc": {
+                "total": 34,
+                "breakdown": {
+                    "look": 8,
+                    "walk": 9,
+                    "dress": 8,
+                    "extra": 9
+                }
+            }
+        },
+        "b8": {
+            "g_62b93bcc": {
+                "total": 39,
+                "breakdown": {
+                    "look": 9,
+                    "walk": 10,
+                    "dress": 10,
+                    "extra": 10
+                }
+            }
+        },
+        "b9": {
+            "g_62b93bcc": {
+                "total": 40,
+                "breakdown": {
+                    "look": 10,
+                    "walk": 10,
+                    "dress": 10,
+                    "extra": 10
+                }
+            }
+        },
+        "g1": {
+            "g_62b93bcc": {
+                "total": 37,
+                "breakdown": {
+                    "look": 10,
+                    "walk": 9,
+                    "dress": 8,
+                    "extra": 10
+                }
+            }
+        },
+        "g2": {
+            "g_62b93bcc": {
+                "total": 39,
+                "breakdown": {
+                    "look": 10,
+                    "walk": 10,
+                    "dress": 10,
+                    "extra": 9
+                }
+            }
+        },
+        "g3": {
+            "g_62b93bcc": {
+                "total": 39,
+                "breakdown": {
+                    "look": 10,
+                    "walk": 9,
+                    "dress": 10,
+                    "extra": 10
+                }
+            }
+        },
+        "g4": {
+            "g_62b93bcc": {
+                "total": 39,
+                "breakdown": {
+                    "look": 10,
+                    "walk": 10,
+                    "dress": 10,
+                    "extra": 9
+                }
+            }
+        },
+        "g7": {
+            "g_62b93bcc": {
+                "total": 39,
+                "breakdown": {
+                    "look": 10,
+                    "walk": 9,
+                    "dress": 10,
+                    "extra": 10
+                }
+            }
+        },
+        "g8": {
+            "g_62b93bcc": {
+                "total": 36,
+                "breakdown": {
+                    "look": 9,
+                    "walk": 9,
+                    "dress": 9,
+                    "extra": 9
+                }
+            }
+        },
+        "g9": {
+            "g_62b93bcc": {
+                "total": 38,
+                "breakdown": {
+                    "look": 9,
+                    "walk": 10,
+                    "dress": 10,
+                    "extra": 9
+                }
+            }
+        },
+        "g10": {
+            "g_62b93bcc": {
+                "total": 36,
+                "breakdown": {
+                    "look": 10,
+                    "walk": 9,
+                    "dress": 8,
+                    "extra": 9
+                }
+            }
+        },
+        "g11": {
+            "g_62b93bcc": {
+                "total": 39,
+                "breakdown": {
+                    "look": 9,
+                    "walk": 10,
+                    "dress": 10,
+                    "extra": 10
+                }
+            }
+        }
+    },
     "round2_scores": {},
     "guests": {
         "g_62b93bcc": "ravi"
@@ -105,74 +304,74 @@
         {
             "id": "c1",
             "p1_id": "g1",
-            "p2_id": "g2",
-            "theme": "Couple 1",
             "p1_name": "NIKITA",
-            "p2_name": "DIVYA"
+            "p2_id": "g2",
+            "p2_name": "DIVYA",
+            "theme": "Couple 1"
         },
         {
             "id": "c3",
             "p1_id": "b3",
-            "p2_id": "g3",
-            "theme": "Couple 3",
             "p1_name": "PRIYANSH",
-            "p2_name": "SUMATI"
+            "p2_id": "g3",
+            "p2_name": "SUMATI",
+            "theme": "Couple 3"
         },
         {
             "id": "c4",
             "p1_id": "b4",
-            "p2_id": "g4",
-            "theme": "Couple 4",
             "p1_name": "SANGAM",
-            "p2_name": "AARYA"
+            "p2_id": "g4",
+            "p2_name": "AARYA",
+            "theme": "Couple 4"
         },
         {
             "id": "c5",
             "p1_id": "b5",
-            "p2_id": "g5",
-            "theme": "Couple 5",
             "p1_name": "ABHISHEK",
-            "p2_name": "SEJAL"
+            "p2_id": "g5",
+            "p2_name": "SEJAL",
+            "theme": "Couple 5"
         },
         {
             "id": "c6",
             "p1_id": "b6",
-            "p2_id": "g6",
-            "theme": "Couple 6",
             "p1_name": "DIPANSHU",
-            "p2_name": "SHIVANI"
+            "p2_id": "g6",
+            "p2_name": "SHIVANI",
+            "theme": "Couple 6"
         },
         {
             "id": "c7",
             "p1_id": "b7",
-            "p2_id": "g7",
-            "theme": "Couple 7",
             "p1_name": "KULDEEP",
-            "p2_name": "ANJALI"
+            "p2_id": "g7",
+            "p2_name": "ANJALI",
+            "theme": "Couple 7"
         },
         {
             "id": "c8",
             "p1_id": "b8",
-            "p2_id": "g8",
-            "theme": "Couple 8",
             "p1_name": "HARSHAL",
-            "p2_name": "DEEPIKA"
+            "p2_id": "g8",
+            "p2_name": "DEEPIKA",
+            "theme": "Couple 8"
         },
         {
             "id": "c9",
             "p1_id": "b9",
-            "p2_id": "g9",
-            "theme": "Couple 9",
             "p1_name": "PRANAY",
-            "p2_name": "PRIYANKA"
+            "p2_id": "g9",
+            "p2_name": "PRIYANKA",
+            "theme": "Couple 9"
         },
         {
             "id": "c10",
             "p1_id": "g10",
-            "p2_id": "g11",
-            "theme": "Couple 10",
             "p1_name": "POOJA",
-            "p2_name": "RIYA"
+            "p2_id": "g11",
+            "p2_name": "RIYA",
+            "theme": "Couple 10"
         }
     ],
     "setup_done": true,
