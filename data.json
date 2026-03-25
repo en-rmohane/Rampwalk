@@ -1,160 +1,178 @@
 {
-    "current_round": null,
+    "current_round": "round2",
     "round1_scores": {},
     "round2_scores": {},
-    "guests": {},
+    "guests": {
+        "g_62b93bcc": "ravi"
+    },
     "participants": {
         "boys": [
             {
                 "id": "b3",
-                "name": "Boy 3",
+                "name": "PRIYANSH",
                 "number": 3
             },
             {
                 "id": "b4",
-                "name": "Boy 4",
+                "name": "SANGAM",
                 "number": 4
             },
             {
                 "id": "b5",
-                "name": "Boy 5",
+                "name": "ABHISHEK",
                 "number": 5
             },
             {
                 "id": "b6",
-                "name": "Boy 6",
+                "name": "DIPANSHU",
                 "number": 6
             },
             {
                 "id": "b7",
-                "name": "Boy 7",
+                "name": "KULDEEP",
                 "number": 7
             },
             {
                 "id": "b8",
-                "name": "Boy 8",
+                "name": "HARSHAL",
                 "number": 8
             },
             {
                 "id": "b9",
-                "name": "Boy 9",
+                "name": "PRANAY",
                 "number": 9
             }
         ],
         "girls": [
             {
                 "id": "g1",
-                "name": "Girl 1",
+                "name": "NIKITA",
                 "number": 1
             },
             {
                 "id": "g2",
-                "name": "Girl 2",
+                "name": "DIVYA",
                 "number": 2
             },
             {
                 "id": "g3",
-                "name": "Girl 3",
+                "name": "SUMATI",
                 "number": 3
             },
             {
                 "id": "g4",
-                "name": "Girl 4",
+                "name": "AARYA",
                 "number": 4
             },
             {
                 "id": "g5",
-                "name": "Girl 5",
+                "name": "SEJAL",
                 "number": 5
             },
             {
                 "id": "g6",
-                "name": "Girl 6",
+                "name": "SHIVANI",
                 "number": 6
             },
             {
                 "id": "g7",
-                "name": "Girl 7",
+                "name": "ANJALI",
                 "number": 7
             },
             {
                 "id": "g8",
-                "name": "Girl 8",
+                "name": "DEEPIKA",
                 "number": 8
             },
             {
                 "id": "g9",
-                "name": "Girl 9",
+                "name": "PRIYANKA",
                 "number": 9
             },
             {
                 "id": "g10",
-                "name": "Girl 10",
+                "name": "POOJA",
                 "number": 10
             },
             {
                 "id": "g11",
-                "name": "Girl 11",
+                "name": "RIYA",
                 "number": 11
             }
         ]
     },
     "couples": [
         {
+            "id": "c1",
+            "p1_id": "g1",
+            "p2_id": "g2",
+            "theme": "Couple 1",
+            "p1_name": "NIKITA",
+            "p2_name": "DIVYA"
+        },
+        {
             "id": "c3",
-            "boy_id": "b3",
-            "girl_id": "g3",
-            "theme": "Couple",
-            "boy_name": "Boy 3",
-            "girl_name": "Girl 3"
+            "p1_id": "b3",
+            "p2_id": "g3",
+            "theme": "Couple 3",
+            "p1_name": "PRIYANSH",
+            "p2_name": "SUMATI"
         },
         {
             "id": "c4",
-            "boy_id": "b4",
-            "girl_id": "g4",
-            "theme": "Couple",
-            "boy_name": "Boy 4",
-            "girl_name": "Girl 4"
+            "p1_id": "b4",
+            "p2_id": "g4",
+            "theme": "Couple 4",
+            "p1_name": "SANGAM",
+            "p2_name": "AARYA"
         },
         {
             "id": "c5",
-            "boy_id": "b5",
-            "girl_id": "g5",
-            "theme": "Couple",
-            "boy_name": "Boy 5",
-            "girl_name": "Girl 5"
+            "p1_id": "b5",
+            "p2_id": "g5",
+            "theme": "Couple 5",
+            "p1_name": "ABHISHEK",
+            "p2_name": "SEJAL"
         },
         {
             "id": "c6",
-            "boy_id": "b6",
-            "girl_id": "g6",
-            "theme": "Couple",
-            "boy_name": "Boy 6",
-            "girl_name": "Girl 6"
+            "p1_id": "b6",
+            "p2_id": "g6",
+            "theme": "Couple 6",
+            "p1_name": "DIPANSHU",
+            "p2_name": "SHIVANI"
         },
         {
             "id": "c7",
-            "boy_id": "b7",
-            "girl_id": "g7",
-            "theme": "Couple",
-            "boy_name": "Boy 7",
-            "girl_name": "Girl 7"
+            "p1_id": "b7",
+            "p2_id": "g7",
+            "theme": "Couple 7",
+            "p1_name": "KULDEEP",
+            "p2_name": "ANJALI"
         },
         {
             "id": "c8",
-            "boy_id": "b8",
-            "girl_id": "g8",
-            "theme": "Couple",
-            "boy_name": "Boy 8",
-            "girl_name": "Girl 8"
+            "p1_id": "b8",
+            "p2_id": "g8",
+            "theme": "Couple 8",
+            "p1_name": "HARSHAL",
+            "p2_name": "DEEPIKA"
         },
         {
             "id": "c9",
-            "boy_id": "b9",
-            "girl_id": "g9",
-            "theme": "Couple",
-            "boy_name": "Boy 9",
-            "girl_name": "Girl 9"
+            "p1_id": "b9",
+            "p2_id": "g9",
+            "theme": "Couple 9",
+            "p1_name": "PRANAY",
+            "p2_name": "PRIYANKA"
+        },
+        {
+            "id": "c10",
+            "p1_id": "g10",
+            "p2_id": "g11",
+            "theme": "Couple 10",
+            "p1_name": "POOJA",
+            "p2_name": "RIYA"
         }
     ],
     "setup_done": true,
