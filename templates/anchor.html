@@ -258,7 +258,10 @@ function updateRoundStatus(round) {
 }
 
 function getTotal(scores) {
-  return Object.values(scores).reduce((a,b) => a+b, 0);
+  return Object.values(scores).reduce((a, b) => {
+    let val = (typeof b === 'object' && b !== null) ? (b.total || 0) : (parseInt(b) || 0);
+    return a + val;
+  }, 0);
 }
 
 function renderScoreList(containerId, scores, allScores, round) {
@@ -281,9 +284,10 @@ function renderScoreList(containerId, scores, allScores, round) {
       const c = appState.couples.find(x => x.p1_id === id || x.p2_id === id);
       if (c) sub = 'Theme: ' + c.theme;
     }
-    const gChips = Object.entries(gscores).map(([gid, sc]) =>
-      `<span class="g-chip">${appState.guests[gid]||gid}: ${sc}</span>`
-    ).join('');
+    const gChips = Object.entries(gscores).map(([gid, gdata]) => {
+      let scoreVal = (typeof gdata === 'object' && gdata !== null) ? (gdata.total || 0) : (parseInt(gdata) || 0);
+      return `<span class="g-chip">${appState.guests[gid]||gid}: ${scoreVal}</span>`;
+    }).join('');
     return `
       <div class="score-row" id="row-${id}">
         <div class="s-num">#${sorted.findIndex(x=>x.id===id)+1}</div>

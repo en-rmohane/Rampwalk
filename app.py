@@ -192,18 +192,30 @@ def submit_score():
     data = request.json
     guest_id = data.get("guest_id")
     target_id = data.get("target_id")  # participant or couple id
-    score = data.get("score")
+    scores = data.get("scores", {})    # {look: 10, walk: 10, dress: 10, extra: 10}
     round_name = data.get("round")
 
     if guest_id not in state["guests"]:
         return jsonify({"error": "Invalid guest"}), 400
-    if not (1 <= int(score) <= 10):
-        return jsonify({"error": "Score must be 1-10"}), 400
+    
+    # Calculate total and validate individual scores
+    total_score = 0
+    categories = ["look", "walk", "dress", "extra"]
+    for cat in categories:
+        val = int(scores.get(cat, 0))
+        if not (1 <= val <= 10):
+            return jsonify({"error": f"{cat.capitalize()} score must be 1-10"}), 400
+        total_score += val
 
     score_dict = state["round1_scores"] if round_name == "round1" else state["round2_scores"]
     if target_id not in score_dict:
         score_dict[target_id] = {}
-    score_dict[target_id][guest_id] = int(score)
+    
+    # Store the breakdown as well as the total for the UI
+    score_dict[target_id][guest_id] = {
+        "total": total_score,
+        "breakdown": scores
+    }
     save_state()
 
     # Broadcast live score update to anchor
@@ -212,10 +224,10 @@ def submit_score():
         "target_id": target_id,
         "guest_id": guest_id,
         "guest_name": state["guests"][guest_id],
-        "score": int(score),
+        "score": total_score, # Keep 'score' for backward compatibility in anchor's total
         "scores": score_dict
     })
-    return jsonify({"success": True})
+    return jsonify({"success": True, "total": total_score})
 
 @app.route('/api/finalize_round2', methods=['POST'])
 def finalize_round2():
@@ -250,13 +262,25 @@ def get_public_state():
 def compute_round1_totals():
     totals = {}
     for pid, gscores in state["round1_scores"].items():
-        totals[pid] = sum(gscores.values())
+        total = 0
+        for g_data in gscores.values():
+            if isinstance(g_data, dict):
+                total += g_data.get("total", 0)
+            else:
+                total += g_data # Fallback for legacy data
+        totals[pid] = total
     return totals
 
 def compute_round2_totals():
     totals = {}
     for pid, gscores in state["round2_scores"].items():
-        totals[pid] = sum(gscores.values())
+        total = 0
+        for g_data in gscores.values():
+            if isinstance(g_data, dict):
+                total += g_data.get("total", 0)
+            else:
+                total += g_data # Fallback for legacy data
+        totals[pid] = total
     return totals
 
 def compute_results():
@@ -268,11 +292,19 @@ def compute_results():
         
     for pid, gscores in state["round1_scores"].items():
         if pid in participant_totals:
-            participant_totals[pid] += sum(gscores.values())
+            for g_data in gscores.values():
+                if isinstance(g_data, dict):
+                    participant_totals[pid] += g_data.get("total", 0)
+                else:
+                    participant_totals[pid] += g_data
             
     for pid, gscores in state["round2_scores"].items():
         if pid in participant_totals:
-            participant_totals[pid] += sum(gscores.values())
+            for g_data in gscores.values():
+                if isinstance(g_data, dict):
+                    participant_totals[pid] += g_data.get("total", 0)
+                else:
+                    participant_totals[pid] += g_data
             
     boys = sorted([p for p in state["participants"]["boys"]], key=lambda x: participant_totals.get(x["id"], 0), reverse=True)
     girls = sorted([p for p in state["participants"]["girls"]], key=lambda x: participant_totals.get(x["id"], 0), reverse=True)

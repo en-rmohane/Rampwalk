@@ -149,20 +149,16 @@ function renderRound(state) {
   if (currentRound === 'round1') {
     const all = [...state.participants.boys, ...state.participants.girls];
     renderScoringList(main, 'Round 1 — Introduction', 'Rate all participants on a scale of 1-10', all, 'round1', p => p.name, p => p.id);
-  } else if (currentRound === 'round2') {
-    const r2Items = [];
-    const getNum = id => {
-      let p = state.participants.boys.find(b=>b.id===id) || state.participants.girls.find(g=>g.id===id);
-      return p ? p.number : '?';
-    };
     state.couples.forEach(c => {
       r2Items.push({ id: c.p1_id, name: c.p1_name, number: getNum(c.p1_id), theme: c.theme });
       r2Items.push({ id: c.p2_id, name: c.p2_name, number: getNum(c.p2_id), theme: c.theme });
     });
-    renderScoringList(main, 'Round 2 — Couple Theme Walk', 'Rate each candidate individually on a scale of 1-10', r2Items, 'round2',
+    renderScoringList(main, 'Round 2 — Couple Theme Walk', 'Rate each candidate on Look, Walk, Dress, and Q&A (Max 10 each)', r2Items, 'round2',
       p => p.name, p => p.id, p => `Theme: ${p.theme}`);
   }
 }
+
+const pendingScores = {}; // {participant_id: {look, walk, dress, extra}}
 
 function renderScoringList(container, title, subtitle, items, round, getName, getId, getSub) {
   const scored = items.filter(i => submitted[getId(i)]).length;
@@ -182,52 +178,77 @@ function renderCard(item, round, getName, getId, getSub) {
   const name = getName(item);
   const sub = getSub ? getSub(item) : '';
   const isSubmitted = submitted[id];
-  const selectedScore = submitted[id] || null;
+  const extraLabel = round === 'round1' ? 'INTRO' : 'Q&A';
+  
+  if (!pendingScores[id]) pendingScores[id] = { look: null, walk: null, dress: null, extra: null };
+  const p = pendingScores[id];
+
+  const renderRow = (label, key) => `
+    <div style="margin-bottom:0.8rem;">
+      <div style="font-size:0.75rem; color:var(--gold); font-weight:700; margin-bottom:0.3rem; letter-spacing:0.05em;">${label}</div>
+      <div class="score-row" id="scores-${id}-${key}">
+        ${[1,2,3,4,5,6,7,8,9,10].map(n => 
+          `<button class="score-btn ${p[key]==n?'selected':''}" ${isSubmitted?'disabled':''} onclick="selectCategoryScore('${id}','${key}',${n},this)">${n}</button>`
+        ).join('')}
+      </div>
+    </div>
+  `;
+
   return `
     <div class="participant-card ${isSubmitted ? 'scored' : ''}" id="card-${id}">
       <div class="p-info">
         <div class="p-num">${item.number || (item.id ? item.id.replace(/\D/g,'') : '?')}</div>
         <div><div class="p-name">${name}</div>${sub ? `<div class="p-sub">${sub}</div>` : ''}</div>
       </div>
-      <div class="score-row" id="scores-${id}">
-        ${[1,2,3,4,5,6,7,8,9,10].map(n => 
-          `<button class="score-btn ${selectedScore==n?'selected':''}" onclick="selectScore('${id}','${round}',${n},this)">${n}</button>`
-        ).join('')}
-      </div>
-      <div id="status-${id}" style="margin-top:0.8rem;">
+      
+      ${renderRow('LOOK (10)', 'look')}
+      ${renderRow('WALK (10)', 'walk')}
+      ${renderRow('DRESS (10)', 'dress')}
+      ${renderRow(extraLabel + ' (10)', 'extra')}
+
+      <div id="status-${id}" style="margin-top:1rem;">
       ${isSubmitted
-        ? `<div class="submitted-badge">✅ Score ${isSubmitted} Submitted!</div>`
-        : `<div style="color:#aaa; font-size:0.85rem; text-align:center;">Tap a number to submit score</div>`
+        ? `<div class="submitted-badge">✅ Total Score ${isSubmitted} Submitted!</div>`
+        : `<button class="submit-btn" id="btn-${id}" 
+            ${(p.look && p.walk && p.dress && p.extra) ? '' : 'disabled'} 
+            onclick="submitFinalScore('${id}','${round}')">🚀 Confirm & Submit Scores</button>`
       }
       </div>
     </div>`;
 }
 
-function selectScore(id, round, score, btn) {
+function selectCategoryScore(id, category, score, btn) {
   if (submitted[id]) return;
-  document.querySelectorAll(`#scores-${id} .score-btn`).forEach(b => b.classList.remove('selected'));
+  pendingScores[id][category] = score;
+  document.querySelectorAll(`#scores-${id}-${category} .score-btn`).forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  submitScore(id, round, score);
+  
+  // Update submit button state
+  const p = pendingScores[id];
+  const btnSubmit = document.getElementById(`btn-${id}`);
+  if (btnSubmit && p.look && p.walk && p.dress && p.extra) {
+    btnSubmit.disabled = false;
+  }
 }
 
-async function submitScore(id, round, score) {
+async function submitFinalScore(id, round) {
   const statusEl = document.getElementById(`status-${id}`);
+  const scores = pendingScores[id];
   if (statusEl) statusEl.innerHTML = `<div style="color:var(--gold); text-align:center; font-weight:bold;">Submitting...</div>`;
   
   const res = await fetch('/api/submit_score', {
     method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({guest_id: GUEST_ID, target_id: id, score, round})
+    body: JSON.stringify({guest_id: GUEST_ID, target_id: id, scores, round})
   });
   const data = await res.json();
   if (data.success) {
-    submitted[id] = score;
+    submitted[id] = data.total;
     const card = document.getElementById(`card-${id}`);
     card.classList.add('scored');
-    if (statusEl) statusEl.innerHTML = `<div class="submitted-badge">✅ Score ${score} Submitted!</div>`;
+    if (statusEl) statusEl.innerHTML = `<div class="submitted-badge">✅ Total Score ${data.total} Submitted!</div>`;
     updateProgress();
   } else {
-    if (statusEl) statusEl.innerHTML = `<div style="color:red; text-align:center;">Failed. Try again.</div>`;
-    submitted[id] = false;
+    if (statusEl) statusEl.innerHTML = `<div style="color:red; text-align:center;">Failed: ${data.error || 'Network error'}. Try again.</div>`;
   }
 }
 
