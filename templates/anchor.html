@@ -192,8 +192,7 @@ let guestActivity = {}; // {guest_id: count}
 socket.on('state_update', (state) => {
   appState = state;
   renderGuestGrid(state.guests);
-  if (state.current_round) updateRoundStatus(state.current_round);
-  if (state.winners && state.winners.length > 0) showWinners(state.winners);
+  if (state.winners && (state.winners.boys || state.winners.girls)) showWinners(state.winners);
 });
 
 socket.on('round_started', (data) => {
@@ -242,8 +241,7 @@ async function loadScores() {
 fetch('/api/state').then(r=>r.json()).then(s => {
   appState = s;
   renderGuestGrid(s.guests);
-  if (s.current_round) updateRoundStatus(s.current_round);
-  if (s.winners?.length) showWinners(s.winners);
+  if (s.winners && (s.winners.boys || s.winners.girls)) showWinners(s.winners);
   loadScores();
 });
 
