@@ -193,7 +193,9 @@ socket.on('state_update', (state) => {
   appState = state;
   renderGuestGrid(state.guests);
   if (state.current_round) updateRoundStatus(state.current_round);
-  if (state.winners && (state.winners.boys || state.winners.girls)) showWinners(state.winners);
+  if (state.winners && ((state.winners.boys && state.winners.boys.length > 0) || (state.winners.girls && state.winners.girls.length > 0))) {
+    showWinners(state.winners);
+  }
 });
 
 socket.on('round_started', (data) => {
@@ -243,7 +245,9 @@ fetch('/api/state').then(r=>r.json()).then(s => {
   appState = s;
   renderGuestGrid(s.guests);
   if (s.current_round) updateRoundStatus(s.current_round);
-  if (s.winners && (s.winners.boys || s.winners.girls)) showWinners(s.winners);
+  if (s.winners && ((s.winners.boys && s.winners.boys.length > 0) || (s.winners.girls && s.winners.girls.length > 0))) {
+    showWinners(s.winners);
+  }
   loadScores();
 });
 
@@ -319,10 +323,15 @@ function updateGuestCard(gid, name) {
 }
 
 function showWinners(winners) {
-  if (!winners || (!winners.boys && !winners.girls)) return;
+  if (!winners) return;
+  const boysList = winners.boys || [];
+  const girlsList = winners.girls || [];
+  if (boysList.length === 0 && girlsList.length === 0) return;
+  
   const overlay = document.getElementById('winnersOverlay');
   const cards = document.getElementById('winnerCards');
   const confetti = document.getElementById('confettiArea');
+  if (!overlay || !cards) return;
 
   const rankEmoji = ['🥇', '🥈', '🥉'];
   const rankClass = ['rank1', 'rank2', 'rank3'];
@@ -330,25 +339,25 @@ function showWinners(winners) {
   let html = '<div style="display:flex; gap: 4rem; justify-content:center; flex-wrap:wrap; width:100%;">';
   
   html += '<div style="flex:1; min-width:300px;"><h3 style="color:var(--gold-light); font-size:2rem; margin-bottom:1rem;">Top 3 Boys</h3><div style="display:flex;flex-direction:column;gap:1.5rem;">';
-  (winners.boys || []).forEach((w, i) => {
+  boysList.forEach((w, i) => {
     html += `
-    <div class="winner-card ${rankClass[i]}">
-      <div class="winner-rank">${rankEmoji[i]}</div>
-      <div class="winner-names">${w.name}</div>
-      <div class="winner-theme">${w.theme}</div>
-      <div class="winner-score">${w.total_score} pts</div>
+    <div class="winner-card ${rankClass[i] || 'rank3'}">
+      <div class="winner-rank">${rankEmoji[i] || '🎖️'}</div>
+      <div class="winner-names">${w.name || 'Unknown'}</div>
+      <div class="winner-theme">${w.theme || ''}</div>
+      <div class="winner-score">${w.total_score || 0} pts</div>
     </div>`;
   });
   html += '</div></div>';
 
   html += '<div style="flex:1; min-width:300px;"><h3 style="color:var(--gold-light); font-size:2rem; margin-bottom:1rem;">Top 3 Girls</h3><div style="display:flex;flex-direction:column;gap:1.5rem;">';
-  (winners.girls || []).forEach((w, i) => {
+  girlsList.forEach((w, i) => {
     html += `
-    <div class="winner-card ${rankClass[i]}">
-      <div class="winner-rank">${rankEmoji[i]}</div>
-      <div class="winner-names">${w.name}</div>
-      <div class="winner-theme">${w.theme}</div>
-      <div class="winner-score">${w.total_score} pts</div>
+    <div class="winner-card ${rankClass[i] || 'rank3'}">
+      <div class="winner-rank">${rankEmoji[i] || '🎖️'}</div>
+      <div class="winner-names">${w.name || 'Unknown'}</div>
+      <div class="winner-theme">${w.theme || ''}</div>
+      <div class="winner-score">${w.total_score || 0} pts</div>
     </div>`;
   });
   html += '</div></div>';
