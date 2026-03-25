@@ -148,7 +148,13 @@ function renderRound(state) {
   const main = document.getElementById('mainContent');
   if (currentRound === 'round1') {
     const all = [...state.participants.boys, ...state.participants.girls];
-    renderScoringList(main, 'Round 1 — Introduction', 'Rate all participants on a scale of 1-10', all, 'round1', p => p.name, p => p.id);
+    renderScoringList(main, 'Round 1 — Introduction', 'Rate all participants on Look, Walk, Dress, and Intro (Max 10 each)', all, 'round1', p => p.name, p => p.id);
+  } else if (currentRound === 'round2') {
+    const r2Items = [];
+    const getNum = id => {
+      let p = state.participants.boys.find(b=>b.id===id) || state.participants.girls.find(g=>g.id===id);
+      return p ? p.number : '?';
+    };
     state.couples.forEach(c => {
       r2Items.push({ id: c.p1_id, name: c.p1_name, number: getNum(c.p1_id), theme: c.theme });
       r2Items.push({ id: c.p2_id, name: c.p2_name, number: getNum(c.p2_id), theme: c.theme });
