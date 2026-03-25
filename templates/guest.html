@@ -151,9 +151,13 @@ function renderRound(state) {
     renderScoringList(main, 'Round 1 — Introduction', 'Rate all participants on a scale of 1-10', all, 'round1', p => p.name, p => p.id);
   } else if (currentRound === 'round2') {
     const r2Items = [];
+    const getNum = id => {
+      let p = state.participants.boys.find(b=>b.id===id) || state.participants.girls.find(g=>g.id===id);
+      return p ? p.number : '?';
+    };
     state.couples.forEach(c => {
-      r2Items.push({ id: c.boy_id, name: c.boy_name, theme: c.theme });
-      r2Items.push({ id: c.girl_id, name: c.girl_name, theme: c.theme });
+      r2Items.push({ id: c.p1_id, name: c.p1_name, number: getNum(c.p1_id), theme: c.theme });
+      r2Items.push({ id: c.p2_id, name: c.p2_name, number: getNum(c.p2_id), theme: c.theme });
     });
     renderScoringList(main, 'Round 2 — Couple Theme Walk', 'Rate each candidate individually on a scale of 1-10', r2Items, 'round2',
       p => p.name, p => p.id, p => `Theme: ${p.theme}`);

@@ -1,0 +1,162 @@
+{
+    "current_round": null,
+    "round1_scores": {},
+    "round2_scores": {},
+    "guests": {},
+    "participants": {
+        "boys": [
+            {
+                "id": "b3",
+                "name": "Boy 3",
+                "number": 3
+            },
+            {
+                "id": "b4",
+                "name": "Boy 4",
+                "number": 4
+            },
+            {
+                "id": "b5",
+                "name": "Boy 5",
+                "number": 5
+            },
+            {
+                "id": "b6",
+                "name": "Boy 6",
+                "number": 6
+            },
+            {
+                "id": "b7",
+                "name": "Boy 7",
+                "number": 7
+            },
+            {
+                "id": "b8",
+                "name": "Boy 8",
+                "number": 8
+            },
+            {
+                "id": "b9",
+                "name": "Boy 9",
+                "number": 9
+            }
+        ],
+        "girls": [
+            {
+                "id": "g1",
+                "name": "Girl 1",
+                "number": 1
+            },
+            {
+                "id": "g2",
+                "name": "Girl 2",
+                "number": 2
+            },
+            {
+                "id": "g3",
+                "name": "Girl 3",
+                "number": 3
+            },
+            {
+                "id": "g4",
+                "name": "Girl 4",
+                "number": 4
+            },
+            {
+                "id": "g5",
+                "name": "Girl 5",
+                "number": 5
+            },
+            {
+                "id": "g6",
+                "name": "Girl 6",
+                "number": 6
+            },
+            {
+                "id": "g7",
+                "name": "Girl 7",
+                "number": 7
+            },
+            {
+                "id": "g8",
+                "name": "Girl 8",
+                "number": 8
+            },
+            {
+                "id": "g9",
+                "name": "Girl 9",
+                "number": 9
+            },
+            {
+                "id": "g10",
+                "name": "Girl 10",
+                "number": 10
+            },
+            {
+                "id": "g11",
+                "name": "Girl 11",
+                "number": 11
+            }
+        ]
+    },
+    "couples": [
+        {
+            "id": "c3",
+            "boy_id": "b3",
+            "girl_id": "g3",
+            "theme": "Couple",
+            "boy_name": "Boy 3",
+            "girl_name": "Girl 3"
+        },
+        {
+            "id": "c4",
+            "boy_id": "b4",
+            "girl_id": "g4",
+            "theme": "Couple",
+            "boy_name": "Boy 4",
+            "girl_name": "Girl 4"
+        },
+        {
+            "id": "c5",
+            "boy_id": "b5",
+            "girl_id": "g5",
+            "theme": "Couple",
+            "boy_name": "Boy 5",
+            "girl_name": "Girl 5"
+        },
+        {
+            "id": "c6",
+            "boy_id": "b6",
+            "girl_id": "g6",
+            "theme": "Couple",
+            "boy_name": "Boy 6",
+            "girl_name": "Girl 6"
+        },
+        {
+            "id": "c7",
+            "boy_id": "b7",
+            "girl_id": "g7",
+            "theme": "Couple",
+            "boy_name": "Boy 7",
+            "girl_name": "Girl 7"
+        },
+        {
+            "id": "c8",
+            "boy_id": "b8",
+            "girl_id": "g8",
+            "theme": "Couple",
+            "boy_name": "Boy 8",
+            "girl_name": "Girl 8"
+        },
+        {
+            "id": "c9",
+            "boy_id": "b9",
+            "girl_id": "g9",
+            "theme": "Couple",
+            "boy_name": "Boy 9",
+            "girl_name": "Girl 9"
+        }
+    ],
+    "setup_done": true,
+    "winners": {}
+}

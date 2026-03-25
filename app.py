@@ -11,23 +11,53 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 
-# In-memory state (resets on server restart)
+# In-memory state (will be loaded from file)
 state = {
     "current_round": None,  # "round1" or "round2"
     "round1_scores": {},    # {participant_id: {guest_id: score}}
     "round2_scores": {},    # {participant_id: {guest_id: score}}
     "guests": {},           # {guest_id: guest_name}
     "participants": {
-        "boys": [{"id": f"b{i}", "name": f"Boy {i}", "number": i} for i in range(1, 11)],
-        "girls": [{"id": f"g{i}", "name": f"Girl {i}", "number": i} for i in range(1, 11)]
+        "boys": [{"id": f"b{i}", "name": f"Boy {i}", "number": i} for i in range(3, 10)],
+        "girls": [{"id": f"g{i}", "name": f"Girl {i}", "number": i} for i in range(1, 12)]
     },
     "couples": [
-        {"id": f"c{i}", "boy_id": f"b{i}", "girl_id": f"g{i}", "theme": f"Couple {i}"} 
-        for i in range(1, 11)
+        {"id": "c1", "p1_id": "g1", "p2_id": "g2", "theme": "Couple 1"},
+        {"id": "c3", "p1_id": "b3", "p2_id": "g3", "theme": "Couple 3"},
+        {"id": "c4", "p1_id": "b4", "p2_id": "g4", "theme": "Couple 4"},
+        {"id": "c5", "p1_id": "b5", "p2_id": "g5", "theme": "Couple 5"},
+        {"id": "c6", "p1_id": "b6", "p2_id": "g6", "theme": "Couple 6"},
+        {"id": "c7", "p1_id": "b7", "p2_id": "g7", "theme": "Couple 7"},
+        {"id": "c8", "p1_id": "b8", "p2_id": "g8", "theme": "Couple 8"},
+        {"id": "c9", "p1_id": "b9", "p2_id": "g9", "theme": "Couple 9"},
+        {"id": "c10", "p1_id": "g10", "p2_id": "g11", "theme": "Couple 10"},
     ],
     "setup_done": False,
     "winners": {}
 }
+
+import threading
+state_lock = threading.Lock()
+
+def load_state():
+    global state
+    if os.path.exists('data.json'):
+        try:
+            with open('data.json', 'r') as f:
+                loaded = json.load(f)
+                state.update(loaded)
+        except Exception as e:
+            pass
+
+def save_state():
+    with state_lock:
+        try:
+            with open('data.json', 'w') as f:
+                json.dump(state, f, indent=4)
+        except Exception as e:
+            pass
+
+load_state()
 
 # ─── Routes ───────────────────────────────────────────────────────────────────
 
@@ -84,28 +114,23 @@ def setup():
             state["guests"][g["id"]] = g["name"]
     elif "guests" not in state:
         state["guests"] = {}
-    # Setup participants
-    boys = data.get("boys", [])
-    girls = data.get("girls", [])
-    state["participants"]["boys"] = [{"id": f"b{i+1}", "name": boys[i], "number": i+1} for i in range(len(boys))]
-    state["participants"]["girls"] = [{"id": f"g{i+1}", "name": girls[i], "number": i+1} for i in range(len(girls))]
-    # Setup couples with themes
-    couples = data.get("couples", [])
-    state["couples"] = []
-    for i, c in enumerate(couples):
-        state["couples"].append({
-            "id": f"c{i+1}",
-            "boy_id": f"b{i+1}",
-            "girl_id": f"g{i+1}",
-            "theme": c.get("theme", f"Couple {i+1}"),
-            "boy_name": boys[i] if i < len(boys) else f"Boy {i+1}",
-            "girl_name": girls[i] if i < len(girls) else f"Girl {i+1}"
-        })
-    state["round1_scores"] = {}
-    state["round2_scores"] = {}
-    state["current_round"] = None
+    
+    # Setup participants based on specific id, name, and number
+    state["participants"]["boys"] = data.get("boys", state["participants"]["boys"])
+    state["participants"]["girls"] = data.get("girls", state["participants"]["girls"])
+    
+    # Setup couples
+    state["couples"] = data.get("couples", state["couples"])
+    
+    # Only reset scores if explicitly asked (to prevent accidental wipe mid-event)
+    if data.get("reset_scores"):
+        state["round1_scores"] = {}
+        state["round2_scores"] = {}
+        state["current_round"] = None
+        state["winners"] = {}
+        
     state["setup_done"] = True
-    state["winners"] = {}
+    save_state()
     socketio.emit('state_update', get_public_state())
     return jsonify({"success": True, "guests": state["guests"]})
 
@@ -123,6 +148,7 @@ def guest_register():
             return jsonify({"success": True, "guest_id": gid, "guest_name": gname})
     guest_id = "g_" + uuid.uuid4().hex[:8]
     state["guests"][guest_id] = name
+    save_state()
     socketio.emit('guest_joined', {"guest_id": guest_id, "guest_name": name})
     socketio.emit('state_update', get_public_state())
     return jsonify({"success": True, "guest_id": guest_id, "guest_name": name})
@@ -135,6 +161,7 @@ def start_round():
     round_name = data.get("round")
     if round_name in ["round1", "round2"]:
         state["current_round"] = round_name
+        save_state()
         socketio.emit('round_started', {"round": round_name})
         socketio.emit('state_update', get_public_state())
         return jsonify({"success": True, "round": round_name})
@@ -157,6 +184,7 @@ def submit_score():
     if target_id not in score_dict:
         score_dict[target_id] = {}
     score_dict[target_id][guest_id] = int(score)
+    save_state()
 
     # Broadcast live score update to anchor
     socketio.emit('score_update', {
@@ -175,6 +203,7 @@ def finalize_round2():
         return jsonify({"error": "Unauthorized"}), 401
     results = compute_results()
     state["winners"] = results
+    save_state()
     socketio.emit('winners_announced', {"winners": results})
     return jsonify({"success": True, "winners": results})
 
@@ -230,7 +259,7 @@ def compute_results():
     
     top_boys = []
     for rank, boy in enumerate(boys[:3], 1):
-        theme = next((c["theme"] for c in state["couples"] if c["boy_id"] == boy["id"]), "")
+        theme = next((c["theme"] for c in state["couples"] if c.get("p1_id") == boy["id"] or c.get("p2_id") == boy["id"]), "")
         top_boys.append({
             "rank": rank,
             "id": boy["id"],
@@ -241,7 +270,7 @@ def compute_results():
         
     top_girls = []
     for rank, girl in enumerate(girls[:3], 1):
-        theme = next((c["theme"] for c in state["couples"] if c["girl_id"] == girl["id"]), "")
+        theme = next((c["theme"] for c in state["couples"] if c.get("p1_id") == girl["id"] or c.get("p2_id") == girl["id"]), "")
         top_girls.append({
             "rank": rank,
             "id": girl["id"],

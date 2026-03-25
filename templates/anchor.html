@@ -274,7 +274,7 @@ function renderScoreList(containerId, scores, allScores, round) {
     const name = item.name;
     let sub = '';
     if (round === 'round2') {
-      const c = appState.couples.find(x => x.boy_id === id || x.girl_id === id);
+      const c = appState.couples.find(x => x.p1_id === id || x.p2_id === id);
       if (c) sub = 'Theme: ' + c.theme;
     }
     const gChips = Object.entries(gscores).map(([gid, sc]) =>
