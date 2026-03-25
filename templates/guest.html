@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guest Scoring — Ramp Walk</title>
+<title>Guest Scoring — Shri Balaji Institute</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <style>
@@ -110,6 +110,11 @@ body { background: var(--deep); color: var(--cream); font-family: 'Rajdhani', sa
   </div>
 </div>
 
+<div style="text-align:center; padding:2rem; color:#555; font-size:0.85rem; margin-top:2rem;">
+  Shri Balaji Institute of Technology & Management Betul Annual Function 2k26<br>
+  Developed by Ravi Kumar Mohane
+</div>
+
 <script>
 const GUEST_ID = "{{ guest_id }}";
 const GUEST_NAME = "{{ guest_name }}";
@@ -145,8 +150,13 @@ function renderRound(state) {
     const all = [...state.participants.boys, ...state.participants.girls];
     renderScoringList(main, 'Round 1 — Introduction', 'Rate all participants on a scale of 1-10', all, 'round1', p => p.name, p => p.id);
   } else if (currentRound === 'round2') {
-    renderScoringList(main, 'Round 2 — Couple Theme Walk', 'Rate each couple on a scale of 1-10', state.couples, 'round2',
-      c => `${c.boy_name} & ${c.girl_name}`, c => c.id, c => `Theme: ${c.theme}`);
+    const r2Items = [];
+    state.couples.forEach(c => {
+      r2Items.push({ id: c.boy_id, name: c.boy_name, theme: c.theme });
+      r2Items.push({ id: c.girl_id, name: c.girl_name, theme: c.theme });
+    });
+    renderScoringList(main, 'Round 2 — Couple Theme Walk', 'Rate each candidate individually on a scale of 1-10', r2Items, 'round2',
+      p => p.name, p => p.id, p => `Theme: ${p.theme}`);
   }
 }
 
@@ -180,10 +190,12 @@ function renderCard(item, round, getName, getId, getSub) {
           `<button class="score-btn ${selectedScore==n?'selected':''}" onclick="selectScore('${id}','${round}',${n},this)">${n}</button>`
         ).join('')}
       </div>
+      <div id="status-${id}" style="margin-top:0.8rem;">
       ${isSubmitted
         ? `<div class="submitted-badge">✅ Score ${isSubmitted} Submitted!</div>`
-        : `<button class="submit-btn" id="submit-${id}" disabled onclick="submitScore('${id}','${round}')">Submit Score</button>`
+        : `<div style="color:#aaa; font-size:0.85rem; text-align:center;">Tap a number to submit score</div>`
       }
+      </div>
     </div>`;
 }
 
@@ -191,16 +203,13 @@ function selectScore(id, round, score, btn) {
   if (submitted[id]) return;
   document.querySelectorAll(`#scores-${id} .score-btn`).forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  btn.dataset.selectedScore = score;
-  const sbtn = document.getElementById(`submit-${id}`);
-  if (sbtn) { sbtn.disabled = false; sbtn.dataset.score = score; }
+  submitScore(id, round, score);
 }
 
-async function submitScore(id, round) {
-  const sbtn = document.getElementById(`submit-${id}`);
-  const score = sbtn?.dataset.score;
-  if (!score) return;
-  sbtn.disabled = true; sbtn.textContent = 'Submitting...';
+async function submitScore(id, round, score) {
+  const statusEl = document.getElementById(`status-${id}`);
+  if (statusEl) statusEl.innerHTML = `<div style="color:var(--gold); text-align:center; font-weight:bold;">Submitting...</div>`;
+  
   const res = await fetch('/api/submit_score', {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({guest_id: GUEST_ID, target_id: id, score, round})
@@ -210,17 +219,17 @@ async function submitScore(id, round) {
     submitted[id] = score;
     const card = document.getElementById(`card-${id}`);
     card.classList.add('scored');
-    sbtn.outerHTML = `<div class="submitted-badge">✅ Score ${score} Submitted!</div>`;
+    if (statusEl) statusEl.innerHTML = `<div class="submitted-badge">✅ Score ${score} Submitted!</div>`;
     updateProgress();
+  } else {
+    if (statusEl) statusEl.innerHTML = `<div style="color:red; text-align:center;">Failed. Try again.</div>`;
+    submitted[id] = false;
   }
 }
 
 function updateProgress() {
   if (!appState) return;
-  const items = currentRound === 'round1'
-    ? [...appState.participants.boys, ...appState.participants.girls]
-    : appState.couples;
-  const total = items.length;
+  const total = appState.participants.boys.length + appState.participants.girls.length;
   const done = Object.keys(submitted).length;
   document.querySelector('.progress-text').textContent = `${done}/${total} Scored`;
   const fill = document.getElementById('progressFill');

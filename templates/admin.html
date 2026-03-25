@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Setup — Ramp Walk</title>
+<title>Admin Setup — Shri Balaji Institute</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -146,25 +146,32 @@ input[type=text]:focus { outline: none; border-color: var(--gold); }
     </p>
   </div>
 
-  <!-- Participants -->
-  <div class="section">
-    <div class="section-title">👥 Participants Setup</div>
-    <div class="participants-grid">
-      <div>
-        <label>🚹 Names of 10 Boys</label>
-        <div class="names-list" id="boysList"></div>
+  <!-- Participants & Couples -->
+  <div class="grid-2" style="margin-bottom:2rem;">
+    <div class="section" style="margin-bottom:0;">
+      <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>🚹 Boys</span>
+        <button class="btn btn-gold btn-sm" onclick="addPerson('boys')">➕ Add Boy</button>
       </div>
-      <div>
-        <label>🚺 Names of 10 Girls</label>
-        <div class="names-list" id="girlsList"></div>
+      <div id="boysContainer" style="display:flex; flex-direction:column; gap:0.8rem;"></div>
+    </div>
+
+    <div class="section" style="margin-bottom:0;">
+      <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>🚺 Girls</span>
+        <button class="btn btn-gold btn-sm" onclick="addPerson('girls')">➕ Add Girl</button>
       </div>
+      <div id="girlsContainer" style="display:flex; flex-direction:column; gap:0.8rem;"></div>
     </div>
   </div>
 
-  <!-- Couples & Themes -->
   <div class="section">
-    <div class="section-title">💑 Couple Themes (Round 2)</div>
-    <div id="coupleThemesList" style="display:flex;flex-direction:column;gap:0.7rem;"></div>
+    <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>💑 Couple Themes (Round 2)</span>
+      <button class="btn btn-gold btn-sm" onclick="addTheme()">➕ Add Theme</button>
+    </div>
+    <p style="color:#aaa; font-size:0.85rem; margin-bottom:1rem;">Boy #1 and Girl #1 will be paired for Couple #1, and so on.</p>
+    <div id="themesContainer" style="display:flex; flex-direction:column; gap:0.8rem;"></div>
   </div>
 
   <!-- Save Setup -->
@@ -196,6 +203,10 @@ input[type=text]:focus { outline: none; border-color: var(--gold); }
     </div>
   </div>
 
+  <div style="text-align:center; padding:2rem; color:#555; font-size:0.85rem; margin-top:2rem;">
+    Shri Balaji Institute of Technology & Management Betul Annual Function 2k26<br>
+    Developed by Ravi Kumar Mohane
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -260,27 +271,70 @@ function updateGuestDisplay(guests) {
   ).join('');
 }
 
-// Build inputs
-function buildInputs() {
-  const boys = document.getElementById('boysList');
-  const girls = document.getElementById('girlsList');
-  const couples = document.getElementById('coupleThemesList');
-  boys.innerHTML = ''; girls.innerHTML = ''; couples.innerHTML = '';
-  for(let i=1;i<=10;i++){
-    boys.innerHTML += `<div class="name-row"><div class="num-badge">${i}</div><input type="text" id="boy${i}" placeholder="Boy ${i} name..."></div>`;
-    girls.innerHTML += `<div class="name-row"><div class="num-badge">${i}</div><input type="text" id="girl${i}" placeholder="Girl ${i} name..."></div>`;
-    couples.innerHTML += `<div class="couple-theme-row"><div class="couple-label">Couple ${i}</div><input type="text" id="theme${i}" placeholder="Theme name (eg: Royal, Western, Traditional...)"></div>`;
-  }
+// Dynamic Setup
+let boys = Array.from({length: 10}, (_, i) => ({ id: Date.now() + 'b' + i, name: '' }));
+let girls = Array.from({length: 10}, (_, i) => ({ id: Date.now() + 'g' + i, name: '' }));
+let themes = Array.from({length: 10}, (_, i) => ({ id: Date.now() + 't' + i, theme: '' }));
+
+function renderSetup() {
+  document.getElementById('boysContainer').innerHTML = boys.map((b, i) => `
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+      <div class="num-badge" style="width:28px; height:28px; font-size:0.85rem;">${i+1}</div>
+      <input type="text" id="boy_${b.id}" value="${b.name}" placeholder="Boy ${i+1}..." style="flex:1;" oninput="updateField(boys, '${b.id}', 'name', this.value)">
+      <button class="btn-red btn-sm" style="border:none; border-radius:6px; cursor:pointer;" onclick="removeList(boys, '${b.id}')">🗑️</button>
+    </div>
+  `).join('');
+
+  document.getElementById('girlsContainer').innerHTML = girls.map((g, i) => `
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+      <div class="num-badge" style="width:28px; height:28px; font-size:0.85rem;">${i+1}</div>
+      <input type="text" id="girl_${g.id}" value="${g.name}" placeholder="Girl ${i+1}..." style="flex:1;" oninput="updateField(girls, '${g.id}', 'name', this.value)">
+      <button class="btn-red btn-sm" style="border:none; border-radius:6px; cursor:pointer;" onclick="removeList(girls, '${g.id}')">🗑️</button>
+    </div>
+  `).join('');
+
+  document.getElementById('themesContainer').innerHTML = themes.map((t, i) => `
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+      <div style="color:var(--gold); font-size:0.9rem; min-width:80px;">Couple ${i+1}</div>
+      <input type="text" id="theme_${t.id}" value="${t.theme}" placeholder="Theme name (eg: Royal)..." style="flex:1;" oninput="updateField(themes, '${t.id}', 'theme', this.value)">
+      <button class="btn-red btn-sm" style="border:none; border-radius:6px; cursor:pointer;" onclick="removeList(themes, '${t.id}')">🗑️</button>
+    </div>
+  `).join('');
 }
-buildInputs();
+
+function updateField(list, id, field, value) {
+  const item = list.find(x => x.id === id);
+  if (item) item[field] = value;
+}
+
+function addPerson(type) {
+  if(type === 'boys') boys.push({ id: Date.now() + 'b', name: '' });
+  if(type === 'girls') girls.push({ id: Date.now() + 'g', name: '' });
+  renderSetup();
+}
+
+function addTheme() {
+  themes.push({ id: Date.now() + 't', theme: '' });
+  renderSetup();
+}
+
+function removeList(list, id) {
+  if (list.length <= 1) return showToast('Must have at least 1!', 'error');
+  const idx = list.findIndex(x => x.id === id);
+  if(idx > -1) list.splice(idx, 1);
+  renderSetup();
+}
+
+renderSetup();
 
 async function saveSetup() {
-  const boys = Array.from({length:10}, (_,i) => document.getElementById(`boy${i+1}`).value.trim() || `Boy ${i+1}`);
-  const girls = Array.from({length:10}, (_,i) => document.getElementById(`girl${i+1}`).value.trim() || `Girl ${i+1}`);
-  const couples = Array.from({length:10}, (_,i) => ({ theme: document.getElementById(`theme${i+1}`).value.trim() || `Couple ${i+1}` }));
+  const boysArr = boys.map((b, i) => b.name.trim() || `Boy ${i+1}`);
+  const girlsArr = girls.map((g, i) => g.name.trim() || `Girl ${i+1}`);
+  const couplesArr = themes.map((t, i) => ({ theme: t.theme.trim() || `Couple ${i+1}` }));
+  
   const res = await fetch('/api/setup', {
     method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({boys, girls, couples, guests: []})
+    body: JSON.stringify({boys: boysArr, girls: girlsArr, couples: couplesArr})
   });
   const data = await res.json();
   if (data.success) showToast('Setup saved! Guests can now join via QR ✓', 'success');

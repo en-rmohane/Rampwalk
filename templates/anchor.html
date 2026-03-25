@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anchor Dashboard — Ramp Walk</title>
+<title>Anchor Dashboard — Shri Balaji Institute</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <style>
@@ -158,6 +158,17 @@ body { background: var(--deep); color: var(--cream); font-family: 'Rajdhani', sa
     <div class="panel-title">👥 Guest Scoring Activity</div>
     <div class="guest-grid" id="guestGrid"><div class="empty-msg">No guests connected...</div></div>
   </div>
+
+  <!-- Final Winners -->
+  <div class="panel" style="margin-top:1.5rem;" id="winnersSection">
+    <div class="panel-title">🏆 Final Winners</div>
+    <div id="winnersContainer"><div class="empty-msg">Waiting for Admin to announce final results...</div></div>
+  </div>
+
+  <div style="text-align:center; padding:2rem 0; color:#555; font-size:0.85rem;">
+    Shri Balaji Institute of Technology & Management Betul Annual Function 2k26<br>
+    Developed by Ravi Kumar Mohane
+  </div>
 </div>
 
 <!-- Winners Overlay -->
@@ -219,22 +230,13 @@ async function loadScores() {
   const res = await fetch('/api/scores');
   const data = await res.json();
   if (data.round1 && Object.keys(data.round1).length) {
-    round1Scores = buildScoresFromTotals(data.round1);
+    round1Scores = data.round1;
     renderScoreList('round1List', round1Scores, round1Scores, 'round1');
   }
   if (data.round2 && Object.keys(data.round2).length) {
-    // round2 has {total, scores} per couple
-    const r2 = {};
-    Object.entries(data.round2).forEach(([id, v]) => r2[id] = v.scores || {});
-    round2Scores = r2;
+    round2Scores = data.round2;
     renderScoreList('round2List', round2Scores, round2Scores, 'round2');
   }
-}
-
-function buildScoresFromTotals(totals) {
-  const out = {};
-  Object.keys(totals).forEach(id => out[id] = {});
-  return out;
 }
 
 fetch('/api/state').then(r=>r.json()).then(s => {
@@ -258,9 +260,7 @@ function getTotal(scores) {
 function renderScoreList(containerId, scores, allScores, round) {
   if (!appState) return;
   const container = document.getElementById(containerId);
-  const items = round === 'round1'
-    ? [...appState.participants.boys, ...appState.participants.girls]
-    : appState.couples;
+  const items = [...appState.participants.boys, ...appState.participants.girls];
 
   const sorted = items.map(item => {
     const id = item.id;
@@ -271,8 +271,12 @@ function renderScoreList(containerId, scores, allScores, round) {
   const maxScore = sorted[0]?.total || 1;
 
   container.innerHTML = sorted.map(({ item, id, total, gscores }) => {
-    const name = round === 'round1' ? item.name : `${item.boy_name || '?'} & ${item.girl_name || '?'}`;
-    const sub = round === 'round2' ? item.theme : '';
+    const name = item.name;
+    let sub = '';
+    if (round === 'round2') {
+      const c = appState.couples.find(x => x.boy_id === id || x.girl_id === id);
+      if (c) sub = 'Theme: ' + c.theme;
+    }
     const gChips = Object.entries(gscores).map(([gid, sc]) =>
       `<span class="g-chip">${appState.guests[gid]||gid}: ${sc}</span>`
     ).join('');
@@ -315,6 +319,7 @@ function updateGuestCard(gid, name) {
 }
 
 function showWinners(winners) {
+  if (!winners || (!winners.boys && !winners.girls)) return;
   const overlay = document.getElementById('winnersOverlay');
   const cards = document.getElementById('winnerCards');
   const confetti = document.getElementById('confettiArea');
@@ -322,13 +327,39 @@ function showWinners(winners) {
   const rankEmoji = ['🥇', '🥈', '🥉'];
   const rankClass = ['rank1', 'rank2', 'rank3'];
 
-  cards.innerHTML = winners.map((w, i) => `
+  let html = '<div style="display:flex; gap: 4rem; justify-content:center; flex-wrap:wrap; width:100%;">';
+  
+  html += '<div style="flex:1; min-width:300px;"><h3 style="color:var(--gold-light); font-size:2rem; margin-bottom:1rem;">Top 3 Boys</h3><div style="display:flex;flex-direction:column;gap:1.5rem;">';
+  (winners.boys || []).forEach((w, i) => {
+    html += `
     <div class="winner-card ${rankClass[i]}">
       <div class="winner-rank">${rankEmoji[i]}</div>
-      <div class="winner-names">${w.boy_name} & ${w.girl_name}</div>
+      <div class="winner-names">${w.name}</div>
       <div class="winner-theme">${w.theme}</div>
       <div class="winner-score">${w.total_score} pts</div>
-    </div>`).join('');
+    </div>`;
+  });
+  html += '</div></div>';
+
+  html += '<div style="flex:1; min-width:300px;"><h3 style="color:var(--gold-light); font-size:2rem; margin-bottom:1rem;">Top 3 Girls</h3><div style="display:flex;flex-direction:column;gap:1.5rem;">';
+  (winners.girls || []).forEach((w, i) => {
+    html += `
+    <div class="winner-card ${rankClass[i]}">
+      <div class="winner-rank">${rankEmoji[i]}</div>
+      <div class="winner-names">${w.name}</div>
+      <div class="winner-theme">${w.theme}</div>
+      <div class="winner-score">${w.total_score} pts</div>
+    </div>`;
+  });
+  html += '</div></div>';
+
+  html += '</div>';
+  cards.innerHTML = html;
+
+  const container = document.getElementById('winnersContainer');
+  if (container) {
+    container.innerHTML = html;
+  }
 
   // Confetti
   confetti.innerHTML = '';

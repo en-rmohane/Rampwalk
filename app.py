@@ -15,7 +15,7 @@ ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
 state = {
     "current_round": None,  # "round1" or "round2"
     "round1_scores": {},    # {participant_id: {guest_id: score}}
-    "round2_scores": {},    # {couple_id: {guest_id: score}}
+    "round2_scores": {},    # {participant_id: {guest_id: score}}
     "guests": {},           # {guest_id: guest_name}
     "participants": {
         "boys": [{"id": f"b{i}", "name": f"Boy {i}", "number": i} for i in range(1, 11)],
@@ -26,7 +26,7 @@ state = {
         for i in range(1, 11)
     ],
     "setup_done": False,
-    "winners": []
+    "winners": {}
 }
 
 # ─── Routes ───────────────────────────────────────────────────────────────────
@@ -77,10 +77,13 @@ def setup():
     if not session.get('admin'):
         return jsonify({"error": "Unauthorized"}), 401
     data = request.json
-    # Setup guests
-    state["guests"] = {}
-    for g in data.get("guests", []):
-        state["guests"][g["id"]] = g["name"]
+    # Setup guests only if explicitly provided (prevents wiping live guests on later saves)
+    if "guests" in data:
+        state["guests"] = {}
+        for g in data.get("guests", []):
+            state["guests"][g["id"]] = g["name"]
+    elif "guests" not in state:
+        state["guests"] = {}
     # Setup participants
     boys = data.get("boys", [])
     girls = data.get("girls", [])
@@ -102,7 +105,7 @@ def setup():
     state["round2_scores"] = {}
     state["current_round"] = None
     state["setup_done"] = True
-    state["winners"] = []
+    state["winners"] = {}
     socketio.emit('state_update', get_public_state())
     return jsonify({"success": True, "guests": state["guests"]})
 
@@ -181,9 +184,7 @@ def get_state():
 
 @app.route('/api/scores')
 def get_scores():
-    r1 = compute_round1_totals()
-    r2 = compute_round2_totals()
-    return jsonify({"round1": r1, "round2": r2})
+    return jsonify({"round1": state["round1_scores"], "round2": state["round2_scores"]})
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -205,26 +206,51 @@ def compute_round1_totals():
 
 def compute_round2_totals():
     totals = {}
-    for cid, gscores in state["round2_scores"].items():
-        totals[cid] = {"total": sum(gscores.values()), "scores": gscores}
+    for pid, gscores in state["round2_scores"].items():
+        totals[pid] = sum(gscores.values())
     return totals
 
 def compute_results():
-    totals = compute_round2_totals()
-    sorted_couples = sorted(totals.items(), key=lambda x: x[1]["total"], reverse=True)
-    results = []
-    for rank, (cid, data) in enumerate(sorted_couples[:2], 1):
-        couple = next((c for c in state["couples"] if c["id"] == cid), None)
-        if couple:
-            results.append({
-                "rank": rank,
-                "couple_id": cid,
-                "boy_name": couple.get("boy_name", ""),
-                "girl_name": couple.get("girl_name", ""),
-                "theme": couple.get("theme", ""),
-                "total_score": data["total"]
-            })
-    return results
+    participant_totals = {}
+    for boy in state["participants"]["boys"]:
+        participant_totals[boy["id"]] = 0
+    for girl in state["participants"]["girls"]:
+        participant_totals[girl["id"]] = 0
+        
+    for pid, gscores in state["round1_scores"].items():
+        if pid in participant_totals:
+            participant_totals[pid] += sum(gscores.values())
+            
+    for pid, gscores in state["round2_scores"].items():
+        if pid in participant_totals:
+            participant_totals[pid] += sum(gscores.values())
+            
+    boys = sorted([p for p in state["participants"]["boys"]], key=lambda x: participant_totals.get(x["id"], 0), reverse=True)
+    girls = sorted([p for p in state["participants"]["girls"]], key=lambda x: participant_totals.get(x["id"], 0), reverse=True)
+    
+    top_boys = []
+    for rank, boy in enumerate(boys[:3], 1):
+        theme = next((c["theme"] for c in state["couples"] if c["boy_id"] == boy["id"]), "")
+        top_boys.append({
+            "rank": rank,
+            "id": boy["id"],
+            "name": boy["name"],
+            "theme": theme,
+            "total_score": participant_totals.get(boy["id"], 0)
+        })
+        
+    top_girls = []
+    for rank, girl in enumerate(girls[:3], 1):
+        theme = next((c["theme"] for c in state["couples"] if c["girl_id"] == girl["id"]), "")
+        top_girls.append({
+            "rank": rank,
+            "id": girl["id"],
+            "name": girl["name"],
+            "theme": theme,
+            "total_score": participant_totals.get(girl["id"], 0)
+        })
+        
+    return {"boys": top_boys, "girls": top_girls}
 
 # ─── SocketIO Events ─────────────────────────────────────────────────────────
 
